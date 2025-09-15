@@ -353,12 +353,16 @@ class DICOMImageGenerator:
     def _add_burnt_in_text(self, image: np.ndarray, metadata: Dict[str, Any], modality: str) -> np.ndarray:
         """Add burnt-in text with DICOM metadata to the image."""
         try:
-            # Convert numpy array to PIL Image for text overlay
-            # Normalize to 0-255 range for PIL
-            if image.dtype == np.uint16:
-                normalized_image = (image / 65535 * 255).astype(np.uint8)
+            # Store original image properties
+            original_dtype = image.dtype
+            original_min = image.min()
+            original_max = image.max()
+            
+            # Normalize to 0-255 range for PIL while preserving relative intensities
+            if original_max > original_min:
+                normalized_image = ((image - original_min) / (original_max - original_min) * 255).astype(np.uint8)
             else:
-                normalized_image = image.astype(np.uint8)
+                normalized_image = np.zeros_like(image, dtype=np.uint8)
             
             pil_image = Image.fromarray(normalized_image, mode='L')
             draw = ImageDraw.Draw(pil_image)
@@ -418,11 +422,15 @@ class DICOMImageGenerator:
             # Convert back to numpy array
             text_overlay = np.array(pil_image, dtype=np.uint8)
             
-            # Convert back to original bit depth
-            if image.dtype == np.uint16:
-                text_overlay = (text_overlay / 255 * 65535).astype(np.uint16)
+            # Convert back to original bit depth and range
+            if original_dtype == np.uint16:
+                # Scale back to original range
+                if original_max > original_min:
+                    text_overlay = ((text_overlay / 255.0) * (original_max - original_min) + original_min).astype(np.uint16)
+                else:
+                    text_overlay = np.full_like(image, original_min, dtype=np.uint16)
             else:
-                text_overlay = text_overlay.astype(image.dtype)
+                text_overlay = text_overlay.astype(original_dtype)
             
             return text_overlay
             
