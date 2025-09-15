@@ -76,27 +76,52 @@ class DICOMFieldValidator:
         
         # Process each mandatory field
         for tag, field_name in mandatory_fields.items():
-            if tag not in dataset:
+            if not hasattr(dataset, field_name):
                 # Generate field if not present
                 generated_value = self._generate_field(tag, field_name, user_fields, module)
-                dataset[tag] = generated_value
+                setattr(dataset, field_name, generated_value)
                 log_dicom_field_generation(tag, field_name, str(generated_value))
         
         # Process user-specified fields
-        for tag, value in user_fields.items():
-            if self._is_valid_field(tag, value):
-                dataset[tag] = value
+        for field_name, value in user_fields.items():
+            # Skip non-DICOM fields (like patient_name, study_uid, etc.)
+            if field_name in ['patient_name', 'patient_id', 'study_uid', 'study_date', 
+                            'study_time', 'series_uid', 'series_number', 'modality', 
+                            'sop_instance_uid', 'instance_number', 'study_description',
+                            'series_description', 'rows', 'columns']:
+                continue
+                
+            if self._is_valid_field(field_name, value):
+                setattr(dataset, field_name, value)
             else:
                 # Generate valid field if user value is invalid
-                generated_value = self._generate_field(tag, "", user_fields, module)
-                dataset[tag] = generated_value
-                log_dicom_field_generation(tag, f"User field {tag}", str(generated_value), "invalid user value")
+                generated_value = self._generate_field(field_name, field_name, user_fields, module)
+                setattr(dataset, field_name, generated_value)
+                log_dicom_field_generation(field_name, field_name, str(generated_value), "invalid user value")
         
         return dataset
     
-    def _is_valid_field(self, tag: str, value: Any) -> bool:
+    def _is_valid_field(self, field_name: str, value: Any) -> bool:
         """Check if a field value is valid according to DICOM rules."""
-        if tag not in self.FIELD_RULES:
+        # Map field names to tags for validation
+        field_to_tag = {
+            "PatientName": "0010,0010",
+            "PatientID": "0010,0020",
+            "PatientBirthDate": "0010,0030",
+            "PatientSex": "0010,0040",
+            "StudyInstanceUID": "0020,000D",
+            "StudyDate": "0008,0020",
+            "StudyTime": "0008,0030",
+            "SeriesInstanceUID": "0020,000E",
+            "SeriesNumber": "0020,0011",
+            "Modality": "0008,0060",
+            "SOPInstanceUID": "0008,0018",
+            "SOPClassUID": "0008,0016",
+            "InstanceNumber": "0020,0013",
+        }
+        
+        tag = field_to_tag.get(field_name)
+        if not tag or tag not in self.FIELD_RULES:
             return True  # Unknown fields are allowed
         
         rule = self.FIELD_RULES[tag]

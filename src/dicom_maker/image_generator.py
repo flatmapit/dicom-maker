@@ -23,6 +23,14 @@ class DICOMImageGenerator:
             "limb": self._generate_limb_image,
         }
     
+    def _add_intensity(self, image: np.ndarray, intensity) -> np.ndarray:
+        """Safely add intensity to image with proper dtype handling."""
+        if isinstance(intensity, (int, float)):
+            image = image.astype(np.int32) + intensity
+        else:
+            image = image.astype(np.int32) + intensity.astype(np.int32)
+        return np.clip(image, 0, 65535).astype(np.uint16)
+    
     def generate_image(self, width: int = 512, height: int = 512, 
                       modality: str = "CR", anatomical_region: str = "chest",
                       **kwargs) -> np.ndarray:
@@ -49,7 +57,8 @@ class DICOMImageGenerator:
         image = np.zeros((height, width), dtype=np.uint16)
         
         # Add background noise
-        image += np.random.normal(1000, 50, (height, width)).astype(np.uint16)
+        noise = np.random.normal(1000, 50, (height, width)).astype(np.uint16)
+        image = self._add_intensity(image, noise)
         
         # Add rib structures
         for i in range(5):
@@ -188,7 +197,10 @@ class DICOMImageGenerator:
         """Add heart shadow to the image."""
         y, x = np.ogrid[:image.shape[0], :image.shape[1]]
         mask = (x - center_x)**2 + (y - center_y)**2 <= radius**2
-        image[mask] += random.randint(80, 120)
+        intensity = random.randint(80, 120)
+        temp_image = image.astype(np.int32)
+        temp_image[mask] += intensity
+        image[:] = np.clip(temp_image, 0, 65535).astype(np.uint16)
     
     def _add_lung_fields(self, image: np.ndarray, width: int, height: int):
         """Add lung field structures."""
@@ -305,7 +317,10 @@ class DICOMImageGenerator:
         """Add a circular structure to the image."""
         y, x = np.ogrid[:image.shape[0], :image.shape[1]]
         mask = (x - center_x)**2 + (y - center_y)**2 <= radius**2
-        image[mask] += intensity
+        # Safely add intensity
+        temp_image = image.astype(np.int32)
+        temp_image[mask] += intensity
+        image[:] = np.clip(temp_image, 0, 65535).astype(np.uint16)
     
     def _apply_modality_characteristics(self, image: np.ndarray, modality: str) -> np.ndarray:
         """Apply modality-specific characteristics to the image."""

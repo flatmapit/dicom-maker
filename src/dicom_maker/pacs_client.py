@@ -4,8 +4,11 @@ PACS Client - Handles DICOM network communication
 
 import logging
 from typing import List, Optional, Dict, Any
-from pynetdicom import AE, VerificationSOPClass, StorageSOPClass
-from pynetdicom.sop_class import CTImageStorage, MRImageStorage, CRImageStorage
+from pynetdicom import AE
+from pynetdicom.sop_class import (
+    Verification, StorageServiceClass,
+    CTImageStorage, MRImageStorage, ComputedRadiographyImageStorage
+)
 from pydicom.dataset import Dataset
 
 
@@ -38,11 +41,11 @@ class PACSClient:
             self.ae = AE(ae_title=self.aec)
             
             # Add supported SOP classes
-            self.ae.add_supported_context(VerificationSOPClass)
-            self.ae.add_supported_context(StorageSOPClass)
+            self.ae.add_supported_context(Verification)
+            self.ae.add_supported_context(StorageServiceClass)
             self.ae.add_supported_context(CTImageStorage)
             self.ae.add_supported_context(MRImageStorage)
-            self.ae.add_supported_context(CRImageStorage)
+            self.ae.add_supported_context(ComputedRadiographyImageStorage)
         
         return self.ae
     
