@@ -122,6 +122,9 @@ class DICOMGenerator:
         # Validate and generate image fields
         ds = self.validator.validate_and_generate(ds, image_user_fields, "image")
         
+        # Set SOP Class UID based on modality
+        ds.SOPClassUID = self._get_sop_class_uid(series_data["modality"])
+        
         # Add additional fields
         ds.StudyID = study_data["study_uid"][:8]
         ds.StudyDescription = user_fields.get("study_description", f"Synthetic Study {study_data['study_uid'][:8]}")
@@ -170,6 +173,18 @@ class DICOMGenerator:
         ds.is_little_endian = True
         
         return ds
+    
+    def _get_sop_class_uid(self, modality: str) -> str:
+        """Get SOP Class UID based on modality."""
+        sop_class_mapping = {
+            "CR": "1.2.840.10008.5.1.4.1.1.1",  # Computed Radiography Image Storage
+            "CT": "1.2.840.10008.5.1.4.1.1.2",  # CT Image Storage
+            "MR": "1.2.840.10008.5.1.4.1.1.4",  # MR Image Storage
+            "US": "1.2.840.10008.5.1.4.1.1.6",  # Ultrasound Image Storage
+            "MG": "1.2.840.10008.5.1.4.1.1.1.2", # Mammography Image Storage
+            "DX": "1.2.840.10008.5.1.4.1.1.1.1", # Digital X-Ray Image Storage for Presentation
+        }
+        return sop_class_mapping.get(modality, "1.2.840.10008.5.1.4.1.1.1") # Default to CR
     
     def _get_template_fields(self, template: str) -> Dict[str, Any]:
         """Get template fields for a study template."""

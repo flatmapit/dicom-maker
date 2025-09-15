@@ -6,8 +6,11 @@ import logging
 from typing import List, Optional, Dict, Any
 from pynetdicom import AE
 from pynetdicom.sop_class import (
-    Verification, StorageServiceClass,
-    CTImageStorage, MRImageStorage, ComputedRadiographyImageStorage
+    Verification,
+    CTImageStorage, MRImageStorage, ComputedRadiographyImageStorage,
+    DigitalMammographyXRayImageStorageForPresentation,
+    DigitalXRayImageStorageForPresentation,
+    UltrasoundImageStorage
 )
 from pydicom.dataset import Dataset
 
@@ -53,16 +56,36 @@ class PACSClient:
         ae.add_requested_context(Verification, ImplicitVRLittleEndian)
         
         # Add storage contexts (both supported and requested)
-        ae.add_supported_context(StorageServiceClass, ImplicitVRLittleEndian)
-        ae.add_requested_context(StorageServiceClass, ImplicitVRLittleEndian)
+        # Note: StorageServiceClass is a class, not a UID string
+        # We'll add specific SOP classes instead
         ae.add_supported_context(CTImageStorage, ImplicitVRLittleEndian)
         ae.add_requested_context(CTImageStorage, ImplicitVRLittleEndian)
         ae.add_supported_context(MRImageStorage, ImplicitVRLittleEndian)
         ae.add_requested_context(MRImageStorage, ImplicitVRLittleEndian)
         ae.add_supported_context(ComputedRadiographyImageStorage, ImplicitVRLittleEndian)
         ae.add_requested_context(ComputedRadiographyImageStorage, ImplicitVRLittleEndian)
+        ae.add_supported_context(DigitalMammographyXRayImageStorageForPresentation, ImplicitVRLittleEndian)
+        ae.add_requested_context(DigitalMammographyXRayImageStorageForPresentation, ImplicitVRLittleEndian)
+        ae.add_supported_context(DigitalXRayImageStorageForPresentation, ImplicitVRLittleEndian)
+        ae.add_requested_context(DigitalXRayImageStorageForPresentation, ImplicitVRLittleEndian)
+        ae.add_supported_context(UltrasoundImageStorage, ImplicitVRLittleEndian)
+        ae.add_requested_context(UltrasoundImageStorage, ImplicitVRLittleEndian)
         
         return ae
+    
+    def _ensure_string_uids(self, dataset):
+        """Ensure all UID fields are strings for pynetdicom compatibility."""
+        uid_fields = [
+            'SOPInstanceUID', 'SOPClassUID', 'StudyInstanceUID', 'SeriesInstanceUID',
+            'TransferSyntaxUID', 'MediaStorageSOPClassUID', 'MediaStorageSOPInstanceUID',
+            'ImplementationClassUID'
+        ]
+        
+        for field in uid_fields:
+            if hasattr(dataset, field):
+                value = getattr(dataset, field)
+                if value is not None:
+                    setattr(dataset, field, str(value))
     
     def verify_connection(self) -> bool:
         """
@@ -131,6 +154,9 @@ class PACSClient:
             for series in study_data.get("series", []):
                 for image in series.get("images", []):
                     total_count += 1
+                    
+                    # Ensure UIDs are strings for pynetdicom compatibility
+                    self._ensure_string_uids(image)
                     
                     # Send C-STORE request
                     status = assoc.send_c_store(image)
