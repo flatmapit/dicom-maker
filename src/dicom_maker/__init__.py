@@ -19,6 +19,7 @@ from .dicom_validator import DICOMFieldValidator
 from .image_generator import DICOMImageGenerator
 from .pacs_client import PACSClient
 from .study_manager import StudyManager
+from .export_manager import ExportManager
 from .logger import get_logger, setup_logging
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "DICOMImageGenerator",
     "PACSClient",
     "StudyManager",
+    "ExportManager",
     "get_logger",
     "setup_logging",
 ]

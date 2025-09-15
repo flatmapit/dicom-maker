@@ -11,6 +11,7 @@ from typing import Optional
 from .dicom_generator import DICOMGenerator
 from .pacs_client import PACSClient
 from .study_manager import StudyManager
+from .export_manager import ExportManager
 from .logger import setup_logging, get_logger
 
 
@@ -138,6 +139,7 @@ def export(study_id: str, export_format: str, output_dir: Optional[str],
     try:
         logger = get_logger()
         study_manager = StudyManager(studies_dir)
+        export_manager = ExportManager()
         
         # Load study
         study = study_manager.load_study(study_id)
@@ -149,15 +151,19 @@ def export(study_id: str, export_format: str, output_dir: Optional[str],
             if not output_dir:
                 output_dir = f"exports/{study_id}"
             logger.info(f"Exporting study {study_id} to PNG files in {output_dir}")
-            # TODO: Implement PNG export
-            logger.warning("PNG export not yet implemented")
+            success = export_manager.export_to_png(study, output_dir)
+            if not success:
+                logger.failure("PNG export failed!")
+                sys.exit(1)
             
         elif export_format == 'pdf':
             if not output_file:
                 output_file = f"{study_id}.pdf"
             logger.info(f"Exporting study {study_id} to PDF: {output_file}")
-            # TODO: Implement PDF export
-            logger.warning("PDF export not yet implemented")
+            success = export_manager.export_to_pdf(study, output_file)
+            if not success:
+                logger.failure("PDF export failed!")
+                sys.exit(1)
             
     except Exception as e:
         logger = get_logger()

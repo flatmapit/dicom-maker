@@ -1,0 +1,16 @@
+DICOM Image Metadata
+====================
+
+Instance Number: 4
+SOP Instance UID: 1.2.826.0.1.3680043.8.498.13049116183518960854714279259284246061
+Modality: CT
+Rows: 512
+Columns: 512
+Bits Allocated: 16
+Bits Stored: 16
+Photometric Interpretation: MONOCHROME2
+Patient Name: CT Test Patient
+Patient ID: f3bef000
+Study Date: 20250915
+Study Time: 162030
+Accession Number: CT-2025-001
