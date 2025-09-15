@@ -121,7 +121,7 @@ class StudyManager:
                     # Load images in series
                     for dcm_file in series_dir.glob("*.dcm"):
                         try:
-                            image = pydicom.dcmread(str(dcm_file))
+                            image = pydicom.dcmread(str(dcm_file), force=True)
                             series_data["images"].append(image)
                         except Exception as e:
                             print(f"Error loading {dcm_file}: {e}")

@@ -35,13 +35,15 @@ def cli(ctx, log_file, log_level):
 @click.option('--anatomical-region', default='chest', help='Anatomical region for image generation')
 @click.option('--patient-id', help='Patient ID')
 @click.option('--patient-name', help='Patient name')
+@click.option('--accession-number', help='Accession number')
 @click.option('--study-description', help='Study description')
 @click.option('--output-dir', default='studies', help='Output directory for studies')
 @click.option('--config', help='Configuration file path')
 def create(study_count: int, series_count: int, image_count: int, 
           modality: str, template: Optional[str], anatomical_region: str,
           patient_id: Optional[str], patient_name: Optional[str], 
-          study_description: Optional[str], output_dir: str, config: Optional[str]):
+          accession_number: Optional[str], study_description: Optional[str], 
+          output_dir: str, config: Optional[str]):
     """Create synthetic DICOM studies."""
     try:
         logger = get_logger()
@@ -54,6 +56,8 @@ def create(study_count: int, series_count: int, image_count: int,
             user_fields['patient_id'] = patient_id
         if patient_name:
             user_fields['patient_name'] = patient_name
+        if accession_number:
+            user_fields['accession_number'] = accession_number
         if study_description:
             user_fields['study_description'] = study_description
         

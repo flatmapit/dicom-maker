@@ -146,12 +146,16 @@ class DICOMGenerator:
         )
         ds.PixelData = pixel_data.tobytes()
         
-        # Transfer Syntax
+        # Transfer Syntax - must be set before adding to dataset
         ds.file_meta = Dataset()
         ds.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
         ds.file_meta.MediaStorageSOPClassUID = ds.SOPClassUID
         ds.file_meta.MediaStorageSOPInstanceUID = ds.SOPInstanceUID
         ds.file_meta.ImplementationClassUID = pydicom.uid.PYDICOM_IMPLEMENTATION_UID
+        
+        # Set the transfer syntax in the dataset
+        ds.is_implicit_VR = True
+        ds.is_little_endian = True
         
         return ds
     

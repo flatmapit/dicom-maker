@@ -37,17 +37,32 @@ class PACSClient:
     
     def _create_ae(self) -> AE:
         """Create and configure Application Entity."""
-        if self.ae is None:
-            self.ae = AE(ae_title=self.aec)
-            
-            # Add supported SOP classes
-            self.ae.add_supported_context(Verification)
-            self.ae.add_supported_context(StorageServiceClass)
-            self.ae.add_supported_context(CTImageStorage)
-            self.ae.add_supported_context(MRImageStorage)
-            self.ae.add_supported_context(ComputedRadiographyImageStorage)
+        # Always create a new AE to avoid UID issues
+        # Ensure AE titles are strings and properly formatted
+        aec_title = str(self.aec).strip()
+        if len(aec_title) > 16:
+            aec_title = aec_title[:16]
         
-        return self.ae
+        ae = AE(ae_title=aec_title)
+        
+        # Add requested presentation contexts
+        from pydicom.uid import ImplicitVRLittleEndian
+        
+        # Add verification context (both supported and requested)
+        ae.add_supported_context(Verification, ImplicitVRLittleEndian)
+        ae.add_requested_context(Verification, ImplicitVRLittleEndian)
+        
+        # Add storage contexts (both supported and requested)
+        ae.add_supported_context(StorageServiceClass, ImplicitVRLittleEndian)
+        ae.add_requested_context(StorageServiceClass, ImplicitVRLittleEndian)
+        ae.add_supported_context(CTImageStorage, ImplicitVRLittleEndian)
+        ae.add_requested_context(CTImageStorage, ImplicitVRLittleEndian)
+        ae.add_supported_context(MRImageStorage, ImplicitVRLittleEndian)
+        ae.add_requested_context(MRImageStorage, ImplicitVRLittleEndian)
+        ae.add_supported_context(ComputedRadiographyImageStorage, ImplicitVRLittleEndian)
+        ae.add_requested_context(ComputedRadiographyImageStorage, ImplicitVRLittleEndian)
+        
+        return ae
     
     def verify_connection(self) -> bool:
         """
@@ -60,7 +75,10 @@ class PACSClient:
             ae = self._create_ae()
             
             # Associate with PACS
-            assoc = ae.associate(self.host, self.port, ae_title=self.aet)
+            aet_title = str(self.aet).strip()
+            if len(aet_title) > 16:
+                aet_title = aet_title[:16]
+            assoc = ae.associate(self.host, self.port, ae_title=aet_title)
             
             if assoc.is_established:
                 # Send C-ECHO request
@@ -97,7 +115,10 @@ class PACSClient:
             ae = self._create_ae()
             
             # Associate with PACS
-            assoc = ae.associate(self.host, self.port, ae_title=self.aet)
+            aet_title = str(self.aet).strip()
+            if len(aet_title) > 16:
+                aet_title = aet_title[:16]
+            assoc = ae.associate(self.host, self.port, ae_title=aet_title)
             
             if not assoc.is_established:
                 self.logger.error("Failed to establish association")
@@ -149,7 +170,10 @@ class PACSClient:
             ae = self._create_ae()
             
             # Associate with PACS
-            assoc = ae.associate(self.host, self.port, ae_title=self.aet)
+            aet_title = str(self.aet).strip()
+            if len(aet_title) > 16:
+                aet_title = aet_title[:16]
+            assoc = ae.associate(self.host, self.port, ae_title=aet_title)
             
             if not assoc.is_established:
                 self.logger.error("Failed to establish association")

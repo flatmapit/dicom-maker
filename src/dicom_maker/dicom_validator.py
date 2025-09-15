@@ -24,6 +24,7 @@ class DICOMFieldValidator:
             "0020,000D": "StudyInstanceUID",
             "0008,0020": "StudyDate",
             "0008,0030": "StudyTime",
+            "0008,0050": "AccessionNumber",
         },
         "series": {
             "0020,000E": "SeriesInstanceUID",
@@ -46,6 +47,7 @@ class DICOMFieldValidator:
         "0020,000D": {"type": str, "required": True, "format": "uid"},
         "0008,0020": {"type": str, "required": True, "format": "YYYYMMDD"},
         "0008,0030": {"type": str, "required": True, "format": "HHMMSS"},
+        "0008,0050": {"type": str, "required": True, "max_length": 16},
         "0020,000E": {"type": str, "required": True, "format": "uid"},
         "0020,0011": {"type": int, "required": True, "min": 1},
         "0008,0060": {"type": str, "required": True, "values": ["CR", "CT", "MR", "US", "DX", "NM", "PT", "RF", "SC", "MG", "XA", "XC"]},
@@ -86,8 +88,8 @@ class DICOMFieldValidator:
         for field_name, value in user_fields.items():
             # Skip non-DICOM fields (like patient_name, study_uid, etc.)
             if field_name in ['patient_name', 'patient_id', 'study_uid', 'study_date', 
-                            'study_time', 'series_uid', 'series_number', 'modality', 
-                            'sop_instance_uid', 'instance_number', 'study_description',
+                            'study_time', 'accession_number', 'series_uid', 'series_number', 
+                            'modality', 'sop_instance_uid', 'instance_number', 'study_description',
                             'series_description', 'rows', 'columns']:
                 continue
                 
@@ -112,6 +114,7 @@ class DICOMFieldValidator:
             "StudyInstanceUID": "0020,000D",
             "StudyDate": "0008,0020",
             "StudyTime": "0008,0030",
+            "AccessionNumber": "0008,0050",
             "SeriesInstanceUID": "0020,000E",
             "SeriesNumber": "0020,0011",
             "Modality": "0008,0060",
@@ -190,6 +193,8 @@ class DICOMFieldValidator:
             return user_fields.get("study_date", datetime.now().strftime("%Y%m%d"))
         elif tag == "0008,0030":  # StudyTime
             return user_fields.get("study_time", datetime.now().strftime("%H%M%S"))
+        elif tag == "0008,0050":  # AccessionNumber
+            return user_fields.get("accession_number", self._generate_accession_number())
         elif tag == "0020,000E":  # SeriesInstanceUID
             return user_fields.get("series_uid", generate_uid())
         elif tag == "0020,0011":  # SeriesNumber
@@ -229,6 +234,14 @@ class DICOMFieldValidator:
             "XC": "1.2.840.10008.5.1.4.1.1.1.3", # External Camera Photography Storage
         }
         return sop_class_mapping.get(modality, "1.2.840.10008.5.1.4.1.1.1")
+    
+    def _generate_accession_number(self) -> str:
+        """Generate a realistic accession number."""
+        # Generate accession number in format: YYYYMMDD-XXXX
+        # Where YYYYMMDD is the current date and XXXX is a 4-digit sequence number
+        date_prefix = datetime.now().strftime("%Y%m%d")
+        sequence = str(uuid.uuid4().int % 10000).zfill(4)
+        return f"{date_prefix}-{sequence}"
     
     def get_generated_fields(self) -> Dict[str, Any]:
         """Get list of fields that were automatically generated."""
