@@ -137,12 +137,24 @@ class DICOMGenerator:
         ds.SamplesPerPixel = 1
         ds.PhotometricInterpretation = "MONOCHROME2"
         
-        # Generate realistic pixel data
+        # Prepare metadata for burnt-in text
+        dicom_metadata = {
+            'PatientName': ds.PatientName,
+            'PatientID': ds.PatientID,
+            'StudyInstanceUID': ds.StudyInstanceUID,
+            'SeriesInstanceUID': ds.SeriesInstanceUID,
+            'Modality': ds.Modality,
+            'StudyDate': ds.StudyDate,
+            'AccessionNumber': ds.AccessionNumber,
+        }
+        
+        # Generate realistic pixel data with burnt-in text
         pixel_data = self.image_generator.generate_image(
             width=ds.Columns,
             height=ds.Rows,
             modality=series_data["modality"],
-            anatomical_region=anatomical_region
+            anatomical_region=anatomical_region,
+            dicom_metadata=dicom_metadata
         )
         ds.PixelData = pixel_data.tobytes()
         

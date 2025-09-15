@@ -33,24 +33,32 @@ class DICOMImageGenerator:
     
     def generate_image(self, width: int = 512, height: int = 512, 
                       modality: str = "CR", anatomical_region: str = "chest",
+                      dicom_metadata: Optional[Dict[str, Any]] = None,
                       **kwargs) -> np.ndarray:
         """
-        Generate a realistic DICOM image.
+        Generate a realistic DICOM image with burnt-in text.
         
         Args:
             width: Image width in pixels
             height: Image height in pixels
             modality: DICOM modality (CR, CT, MR, US, etc.)
             anatomical_region: Anatomical region to simulate
+            dicom_metadata: DICOM metadata for burnt-in text
             **kwargs: Additional parameters for image generation
             
         Returns:
             Generated image as numpy array
         """
         if anatomical_region in self.anatomical_regions:
-            return self.anatomical_regions[anatomical_region](width, height, modality, **kwargs)
+            image = self.anatomical_regions[anatomical_region](width, height, modality, **kwargs)
         else:
-            return self._generate_generic_image(width, height, modality, **kwargs)
+            image = self._generate_generic_image(width, height, modality, **kwargs)
+        
+        # Add burnt-in text if metadata is provided
+        if dicom_metadata:
+            image = self._add_burnt_in_text(image, dicom_metadata, modality)
+        
+        return image
     
     def _generate_chest_image(self, width: int, height: int, modality: str, **kwargs) -> np.ndarray:
         """Generate a chest X-ray like image."""
@@ -341,3 +349,84 @@ class DICOMImageGenerator:
             image = np.clip(image, 0, 65535)
         
         return image.astype(np.uint16)
+    
+    def _add_burnt_in_text(self, image: np.ndarray, metadata: Dict[str, Any], modality: str) -> np.ndarray:
+        """Add burnt-in text with DICOM metadata to the image."""
+        try:
+            # Convert numpy array to PIL Image for text overlay
+            # Normalize to 0-255 range for PIL
+            if image.dtype == np.uint16:
+                normalized_image = (image / 65535 * 255).astype(np.uint8)
+            else:
+                normalized_image = image.astype(np.uint8)
+            
+            pil_image = Image.fromarray(normalized_image, mode='L')
+            draw = ImageDraw.Draw(pil_image)
+            
+            # Try to use a system font, fallback to default
+            try:
+                font_size = max(12, min(image.shape[0], image.shape[1]) // 40)
+                font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", font_size)
+            except (OSError, IOError):
+                try:
+                    font = ImageFont.truetype("arial.ttf", font_size)
+                except (OSError, IOError):
+                    font = ImageFont.load_default()
+            
+            # Extract metadata
+            patient_name = str(metadata.get('PatientName', 'Unknown'))
+            patient_id = str(metadata.get('PatientID', 'Unknown'))
+            study_uid = str(metadata.get('StudyInstanceUID', 'Unknown'))
+            series_uid = str(metadata.get('SeriesInstanceUID', 'Unknown'))
+            modality_text = str(metadata.get('Modality', modality))
+            study_date = str(metadata.get('StudyDate', 'Unknown'))
+            accession_number = str(metadata.get('AccessionNumber', 'Unknown'))
+            
+            # Format date if it's in YYYYMMDD format
+            if len(study_date) == 8 and study_date.isdigit():
+                formatted_date = f"{study_date[:4]}-{study_date[4:6]}-{study_date[6:8]}"
+            else:
+                formatted_date = study_date
+            
+            # Prepare text lines
+            text_lines = [
+                f"Patient: {patient_name}",
+                f"ID: {patient_id}",
+                f"Study: {study_uid[:20]}...",
+                f"Series: {series_uid[:20]}...",
+                f"Modality: {modality_text}",
+                f"Date: {formatted_date}",
+                f"Accession: {accession_number}"
+            ]
+            
+            # Calculate text position (top-left corner with margin)
+            margin = 10
+            line_height = font_size + 2
+            text_color = 255  # White text
+            
+            # Add text background for better visibility
+            text_width = max(len(line) for line in text_lines) * (font_size // 2)
+            text_height = len(text_lines) * line_height
+            draw.rectangle([margin, margin, margin + text_width + 10, margin + text_height + 5], 
+                          fill=0, outline=128)  # Black background with gray border
+            
+            # Draw text lines
+            for i, line in enumerate(text_lines):
+                y_pos = margin + 5 + i * line_height
+                draw.text((margin + 5, y_pos), line, fill=text_color, font=font)
+            
+            # Convert back to numpy array
+            text_overlay = np.array(pil_image, dtype=np.uint8)
+            
+            # Convert back to original bit depth
+            if image.dtype == np.uint16:
+                text_overlay = (text_overlay / 255 * 65535).astype(np.uint16)
+            else:
+                text_overlay = text_overlay.astype(image.dtype)
+            
+            return text_overlay
+            
+        except Exception as e:
+            # If text overlay fails, return original image
+            print(f"Warning: Failed to add burnt-in text: {e}")
+            return image
