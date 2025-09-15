@@ -13,6 +13,16 @@ pynetdicom>=2.0.0
 # Data validation
 jsonschema>=4.0.0
 
+# Image processing and generation
+Pillow>=9.0.0
+numpy>=1.21.0
+
+# PDF generation
+reportlab>=3.6.0
+
+# Logging and utilities
+colorama>=0.4.4
+
 # Development dependencies (install with: pip install -e ".[dev]")
 # pytest>=7.0.0
 # pytest-cov>=4.0.0

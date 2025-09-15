@@ -8,6 +8,9 @@ from typing import Dict, List, Any, Optional
 import pydicom
 from pydicom.dataset import Dataset
 from pydicom.uid import generate_uid
+from .dicom_validator import DICOMFieldValidator
+from .image_generator import DICOMImageGenerator
+from .logger import get_logger
 
 
 class DICOMGenerator:
@@ -15,9 +18,13 @@ class DICOMGenerator:
     
     def __init__(self):
         self.studies: Dict[str, Dict[str, Any]] = {}
+        self.validator = DICOMFieldValidator()
+        self.image_generator = DICOMImageGenerator()
+        self.logger = get_logger()
     
     def create_study(self, series_count: int = 1, image_count: int = 1, 
-                    modality: str = "CR") -> str:
+                    modality: str = "CR", user_fields: Optional[Dict[str, Any]] = None,
+                    anatomical_region: str = "chest", template: Optional[str] = None) -> str:
         """
         Create a synthetic DICOM study.
         
@@ -25,22 +32,35 @@ class DICOMGenerator:
             series_count: Number of series in the study
             image_count: Number of images per series
             modality: DICOM modality (CR, CT, MR, etc.)
+            user_fields: User-specified DICOM field values
+            anatomical_region: Anatomical region for image generation
+            template: Study template name (optional)
             
         Returns:
             Study Instance UID
         """
-        study_uid = generate_uid()
-        study_date = datetime.now().strftime("%Y%m%d")
-        study_time = datetime.now().strftime("%H%M%S")
+        if user_fields is None:
+            user_fields = {}
+        
+        # Apply template if specified
+        if template:
+            template_fields = self._get_template_fields(template)
+            user_fields = {**template_fields, **user_fields}
+        
+        study_uid = user_fields.get("study_uid", generate_uid())
+        study_date = user_fields.get("study_date", datetime.now().strftime("%Y%m%d"))
+        study_time = user_fields.get("study_time", datetime.now().strftime("%H%M%S"))
         
         study_data = {
             "study_uid": study_uid,
             "study_date": study_date,
             "study_time": study_time,
-            "patient_id": str(uuid.uuid4())[:8],
-            "patient_name": f"Patient_{study_uid[:8]}",
+            "patient_id": user_fields.get("patient_id", str(uuid.uuid4())[:8]),
+            "patient_name": user_fields.get("patient_name", f"Patient_{study_uid[:8]}"),
             "series": []
         }
+        
+        self.logger.info(f"Creating study {study_uid} with {series_count} series, {image_count} images each")
         
         # Create series
         for series_idx in range(series_count):
@@ -52,51 +72,64 @@ class DICOMGenerator:
                 "images": []
             }
             
+            self.logger.progress(f"Creating series {series_idx + 1}/{series_count}")
+            
             # Create images
             for image_idx in range(image_count):
                 image_uid = generate_uid()
                 image_data = self._create_image_dataset(
-                    study_data, series_data, image_uid, image_idx + 1
+                    study_data, series_data, image_uid, image_idx + 1,
+                    user_fields, anatomical_region
                 )
                 series_data["images"].append(image_data)
             
             study_data["series"].append(series_data)
         
         self.studies[study_uid] = study_data
+        self.logger.success(f"Created study {study_uid} with {len(study_data['series'])} series")
         return study_uid
     
     def _create_image_dataset(self, study_data: Dict, series_data: Dict, 
-                            image_uid: str, instance_number: int) -> Dataset:
+                            image_uid: str, instance_number: int,
+                            user_fields: Dict[str, Any], anatomical_region: str) -> Dataset:
         """Create a DICOM dataset for an image."""
         ds = Dataset()
         
-        # Patient Information
-        ds.PatientID = study_data["patient_id"]
-        ds.PatientName = study_data["patient_name"]
-        ds.PatientBirthDate = "19900101"  # Default birth date
-        ds.PatientSex = "O"  # Other/Unknown
+        # Prepare user fields for validation
+        image_user_fields = {
+            "patient_id": study_data["patient_id"],
+            "patient_name": study_data["patient_name"],
+            "study_uid": study_data["study_uid"],
+            "study_date": study_data["study_date"],
+            "study_time": study_data["study_time"],
+            "series_uid": series_data["series_uid"],
+            "series_number": series_data["series_number"],
+            "modality": series_data["modality"],
+            "sop_instance_uid": image_uid,
+            "instance_number": instance_number,
+            **user_fields
+        }
         
-        # Study Information
-        ds.StudyInstanceUID = study_data["study_uid"]
-        ds.StudyDate = study_data["study_date"]
-        ds.StudyTime = study_data["study_time"]
+        # Validate and generate patient fields
+        ds = self.validator.validate_and_generate(ds, image_user_fields, "patient")
+        
+        # Validate and generate study fields
+        ds = self.validator.validate_and_generate(ds, image_user_fields, "study")
+        
+        # Validate and generate series fields
+        ds = self.validator.validate_and_generate(ds, image_user_fields, "series")
+        
+        # Validate and generate image fields
+        ds = self.validator.validate_and_generate(ds, image_user_fields, "image")
+        
+        # Add additional fields
         ds.StudyID = study_data["study_uid"][:8]
-        ds.StudyDescription = f"Synthetic Study {study_data['study_uid'][:8]}"
-        
-        # Series Information
-        ds.SeriesInstanceUID = series_data["series_uid"]
-        ds.SeriesNumber = series_data["series_number"]
-        ds.Modality = series_data["modality"]
-        ds.SeriesDescription = f"Synthetic Series {series_data['series_number']}"
-        
-        # Image Information
-        ds.SOPInstanceUID = image_uid
-        ds.InstanceNumber = instance_number
-        ds.SOPClassUID = self._get_sop_class_uid(series_data["modality"])
+        ds.StudyDescription = user_fields.get("study_description", f"Synthetic Study {study_data['study_uid'][:8]}")
+        ds.SeriesDescription = user_fields.get("series_description", f"Synthetic Series {series_data['series_number']}")
         
         # Image Properties
-        ds.Rows = 512
-        ds.Columns = 512
+        ds.Rows = user_fields.get("rows", 512)
+        ds.Columns = user_fields.get("columns", 512)
         ds.BitsAllocated = 16
         ds.BitsStored = 16
         ds.HighBit = 15
@@ -104,9 +137,13 @@ class DICOMGenerator:
         ds.SamplesPerPixel = 1
         ds.PhotometricInterpretation = "MONOCHROME2"
         
-        # Create synthetic pixel data
-        import numpy as np
-        pixel_data = np.random.randint(0, 65535, (512, 512), dtype=np.uint16)
+        # Generate realistic pixel data
+        pixel_data = self.image_generator.generate_image(
+            width=ds.Columns,
+            height=ds.Rows,
+            modality=series_data["modality"],
+            anatomical_region=anatomical_region
+        )
         ds.PixelData = pixel_data.tobytes()
         
         # Transfer Syntax
@@ -118,16 +155,67 @@ class DICOMGenerator:
         
         return ds
     
-    def _get_sop_class_uid(self, modality: str) -> str:
-        """Get SOP Class UID based on modality."""
-        sop_class_mapping = {
-            "CR": "1.2.840.10008.5.1.4.1.1.1",  # Computed Radiography Image Storage
-            "CT": "1.2.840.10008.5.1.4.1.1.2",  # CT Image Storage
-            "MR": "1.2.840.10008.5.1.4.1.1.4",  # MR Image Storage
-            "US": "1.2.840.10008.5.1.4.1.1.6.1", # Ultrasound Image Storage
-            "DX": "1.2.840.10008.5.1.4.1.1.1.1", # Digital X-Ray Image Storage
+    def _get_template_fields(self, template: str) -> Dict[str, Any]:
+        """Get template fields for a study template."""
+        templates = {
+            "chest-xray": {
+                "modality": "CR",
+                "anatomical_region": "chest",
+                "study_description": "Chest X-Ray",
+                "series_description": "PA Chest",
+                "rows": 512,
+                "columns": 512,
+            },
+            "ct-chest": {
+                "modality": "CT",
+                "anatomical_region": "chest",
+                "study_description": "CT Chest",
+                "series_description": "Axial CT Chest",
+                "rows": 512,
+                "columns": 512,
+            },
+            "ct-abdomen": {
+                "modality": "CT",
+                "anatomical_region": "abdomen",
+                "study_description": "CT Abdomen",
+                "series_description": "Axial CT Abdomen",
+                "rows": 512,
+                "columns": 512,
+            },
+            "mri-head": {
+                "modality": "MR",
+                "anatomical_region": "head",
+                "study_description": "MRI Head",
+                "series_description": "T1 Axial MRI",
+                "rows": 256,
+                "columns": 256,
+            },
+            "ultrasound-abdomen": {
+                "modality": "US",
+                "anatomical_region": "abdomen",
+                "study_description": "Ultrasound Abdomen",
+                "series_description": "Abdominal Ultrasound",
+                "rows": 480,
+                "columns": 640,
+            },
+            "mammography": {
+                "modality": "MG",
+                "anatomical_region": "chest",
+                "study_description": "Mammography",
+                "series_description": "CC View",
+                "rows": 1024,
+                "columns": 1024,
+            },
         }
-        return sop_class_mapping.get(modality, "1.2.840.10008.5.1.4.1.1.1")
+        
+        return templates.get(template, {})
+    
+    def get_available_templates(self) -> List[str]:
+        """Get list of available study templates."""
+        return list(self._get_template_fields("").keys()) if hasattr(self, '_templates') else [
+            "chest-xray", "ct-chest", "ct-abdomen", "mri-head", 
+            "ultrasound-abdomen", "mammography"
+        ]
     
     def get_study(self, study_uid: str) -> Optional[Dict[str, Any]]:
         """Get study data by UID."""

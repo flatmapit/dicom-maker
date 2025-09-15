@@ -9,11 +9,15 @@ DICOM Maker is a command-line tool designed to generate synthetic DICOM studies,
 ## Features
 
 - **Native Python Implementation**: No external tool dependencies
-- **Synthetic DICOM Generation**: Create studies, series, and images based on configuration
-- **PACS Integration**: Send DICOM data via C-STORE after C-ECHO verification
-- **Configurable Parameters**: Specify host, port, AEC (Application Entity Caller), and AET (Application Entity Title)
-- **CLI Interface**: View and manage DICOM studies from the command line
-- **Study Management**: Create, view, and manage local DICOM studies
+- **DICOM 3.0 Compliant**: Full support for DICOM standard with user-configurable fields
+- **Realistic Synthetic Data**: Generate realistic but randomized DICOM data using dicom-fabricator style
+- **Study Templates**: Predefined templates for common modalities (CT, MR, CR, US, DX)
+- **PACS Integration**: C-ECHO, C-FIND, and C-STORE operations for complete PACS communication
+- **Export Capabilities**: Export to PNG+text files or PDF with metadata
+- **Comprehensive Logging**: CLI and file logging with detailed operation tracking
+- **Configurable Generation**: Set parameters at patient, study, and series levels
+- **CLI Interface**: Complete command-line interface for all operations
+- **Study Management**: Create, view, manage, and export local DICOM studies
 
 ## Installation
 
@@ -117,11 +121,23 @@ deactivate
 # Create a synthetic DICOM study
 dicom-maker create --study-count 1 --series-count 2 --image-count 10
 
+# Create study from template
+dicom-maker create --template chest-xray --series-count 1 --image-count 2
+
 # View local studies
 dicom-maker list
 
+# Export study to PNG+text files
+dicom-maker export --study-id <study-id> --format png --output-dir exports/
+
+# Export study to PDF
+dicom-maker export --study-id <study-id> --format pdf --output-file study.pdf
+
 # Send study to PACS
 dicom-maker send --study-id <study-id> --host <pacs-host> --port <port> --aec <aec> --aet <aet>
+
+# Query PACS for studies
+dicom-maker query --host <pacs-host> --port <port> --aec <aec> --aet <aet> --patient-id <patient-id>
 
 # Verify PACS connection
 dicom-maker verify --host <pacs-host> --port <port> --aec <aec> --aet <aet>
@@ -201,88 +217,58 @@ pytest tests/test_dicom_generator.py
 ## TODOs
 
 ### High Priority
-- [ ] Research existing DICOM generation tools and libraries
-- [ ] Set up project structure and basic CLI framework
-- [ ] Implement DICOM data generation (studies, series, images)
-- [ ] Implement PACS communication (C-ECHO, C-STORE)
-- [ ] Create configuration system for study templates
-- [ ] Add comprehensive test suite
-- [ ] Create installation and packaging setup
+- [x] Set up project structure and basic CLI framework
+- [x] Create installation and packaging setup
+- [ ] Implement realistic DICOM data generation with dicom-fabricator style images
+- [ ] Add user-configurable DICOM fields with automatic mandatory data generation
+- [ ] Implement C-FIND support for PACS querying
+- [ ] Add comprehensive logging system (CLI + file)
+- [ ] Create study templates for common modalities
+- [ ] Add export functionality (PNG+text, PDF)
 
 ### Medium Priority
-- [ ] Add support for different DICOM modalities (CR, CT, MR, etc.)
-- [ ] Implement study validation and verification
+- [ ] Implement DICOM field validation and error handling
 - [ ] Add progress indicators for long operations
 - [ ] Create example configurations and templates
-- [ ] Add logging and error handling
-- [ ] Performance optimization for large studies
+- [ ] Performance optimization for large studies (thousands of images)
+- [ ] Add comprehensive test suite
+- [ ] Create documentation for study templates
 
 ### Low Priority
 - [ ] Add GUI interface option
 - [ ] Support for DICOM anonymization
-- [ ] Batch processing capabilities
 - [ ] Integration with DICOM viewers
 - [ ] Advanced study manipulation features
+- [ ] Support for additional export formats
 
-## Questions for Clarification
+## Implementation Details
 
-### Technical Specifications
-1. **DICOM Standards**: Which DICOM standard version should be supported? (DICOM 3.0, specific parts like PS3.3, PS3.6, etc.)
+### DICOM Standards
+- **DICOM 3.0** standard compliance
+- Support for all common modalities (CT, MR, CR, US, DX, etc.)
+- User-configurable DICOM fields with automatic generation of mandatory data
+- Comprehensive logging when unspecified data is generated
 
-2. **Study Complexity**: What level of DICOM data complexity is needed?
-   - Basic patient demographics and study info?
-   - Full DICOM headers with all standard attributes?
-   - Support for specific modalities (CT, MR, CR, US, etc.)?
+### Data Generation
+- **Realistic but randomized** synthetic data using dicom-fabricator style image generation
+- **Configurable at patient, study, and series levels**
+- **Study templates** for common examination types (chest X-ray, CT scan, MRI, etc.)
+- **Customizable series and image counts** per study
 
-3. **Data Sources**: Should the synthetic data be:
-   - Completely random/generated?
-   - Based on templates or real anonymized data?
-   - Configurable per study/series?
+### PACS Integration
+- **C-ECHO** for connection verification
+- **C-FIND** for querying PACS systems
+- **C-STORE** for sending DICOM data
+- **Single user, single study** operation model
 
-4. **PACS Compatibility**: Are there specific PACS systems or DICOM implementations that need to be supported?
+### Export Capabilities
+- **Local DICOM file storage** with organized directory structure
+- **PNG + text file export** with metadata summaries
+- **PDF export** with images and metadata on each page
+- **Comprehensive logging** to both CLI and log files
 
-### Configuration and Usage
-5. **Study Templates**: What kind of study templates are needed?
-   - Predefined study types (chest X-ray, CT scan, etc.)?
-   - Customizable series and image counts?
-   - Specific DICOM attributes per template?
-  A: All of these.
-
-6. **CLI Interface**: What specific CLI commands and options are needed?
-   - Study creation parameters?
-   - PACS connection management?
-   - Study viewing and management?
-
-7. **Output Formats**: Besides sending to PACS, should the tool support:
-   - Saving studies to local DICOM files?
-   - Exporting to other formats?
-   - Generating reports or summaries?
-
-### Integration and Dependencies
-8. **DICOM Libraries**: Are there preferences for DICOM libraries?
-   - pydicom (Python DICOM library)?
-   - Other specific libraries?
-   - Any restrictions on dependencies?
-
-9. **PACS Communication**: What DICOM services are needed?
-   - Just C-ECHO and C-STORE?
-   - C-FIND for querying?
-   - C-MOVE for retrieval?
-
-10. **Error Handling**: How should the application handle:
-    - PACS connection failures?
-    - Invalid DICOM data generation?
-    - Network timeouts and retries?
-
-### Performance and Scale
-11. **Study Size**: What are the expected study sizes?
-    - Small studies (1-10 images)?
-    - Large studies (hundreds of images)?
-    - Very large studies (thousands of images)?
-
-12. **Concurrent Operations**: Should the tool support:
-    - Multiple concurrent PACS connections?
-    - Batch processing of multiple studies?
-    - Parallel study generation?
-
-Please provide answers to these questions to help refine the implementation approach and ensure the tool meets your specific requirements.
+### Error Handling
+- **CLI reporting** for all operations
+- **File logging** for detailed error tracking
+- **Graceful handling** of PACS connection failures and network timeouts
+- **Validation and retry mechanisms** for robust operation

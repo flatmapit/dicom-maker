@@ -15,12 +15,19 @@ __email__ = ""
 # Import main components for easy access
 from .cli import main
 from .dicom_generator import DICOMGenerator
+from .dicom_validator import DICOMFieldValidator
+from .image_generator import DICOMImageGenerator
 from .pacs_client import PACSClient
 from .study_manager import StudyManager
+from .logger import get_logger, setup_logging
 
 __all__ = [
     "main",
-    "DICOMGenerator", 
+    "DICOMGenerator",
+    "DICOMFieldValidator", 
+    "DICOMImageGenerator",
     "PACSClient",
     "StudyManager",
+    "get_logger",
+    "setup_logging",
 ]
