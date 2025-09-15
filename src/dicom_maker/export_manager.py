@@ -206,6 +206,10 @@ class ExportManager:
         # Get additional metadata from first image if available
         if series.get('images'):
             first_image = series['images'][0]
+            if hasattr(first_image, 'SeriesInstanceUID'):
+                metadata["Series Instance UID"] = str(first_image.SeriesInstanceUID)
+            if hasattr(first_image, 'Modality'):
+                metadata["Modality"] = str(first_image.Modality)
             if hasattr(first_image, 'SeriesDescription'):
                 metadata["Series Description"] = str(first_image.SeriesDescription)
             if hasattr(first_image, 'StudyDescription'):
