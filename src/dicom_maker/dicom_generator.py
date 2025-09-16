@@ -147,6 +147,7 @@ class DICOMGenerator:
         dicom_metadata = {
             'PatientName': ds.PatientName,
             'PatientID': ds.PatientID,
+            'PatientBirthDate': ds.PatientBirthDate,
             'StudyInstanceUID': ds.StudyInstanceUID,
             'SeriesInstanceUID': ds.SeriesInstanceUID,
             'Modality': ds.Modality,
