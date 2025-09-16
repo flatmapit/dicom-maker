@@ -1,0 +1,16 @@
+DICOM Image Metadata
+====================
+
+Instance Number: 3
+SOP Instance UID: 1.2.826.0.1.3680043.8.498.62831402004795910809608004895163293322
+Modality: US
+Rows: 480
+Columns: 640
+Bits Allocated: 16
+Bits Stored: 16
+Photometric Interpretation: MONOCHROME2
+Patient Name: Example^US^Patient
+Patient ID: 39d662d8
+Study Date: 20250916
+Study Time: 100409
+Accession Number: US-2025-001

@@ -11,13 +11,16 @@ DICOM Maker is a command-line tool designed to generate synthetic DICOM studies,
 - **Native Python Implementation**: No external tool dependencies
 - **DICOM 3.0 Compliant**: Full support for DICOM standard with user-configurable fields
 - **Realistic Synthetic Data**: Generate realistic but randomized DICOM data using dicom-fabricator style
-- **Study Templates**: Predefined templates for common modalities (CT, MR, CR, US, DX)
-- **PACS Integration**: C-ECHO, C-FIND, and C-STORE operations for complete PACS communication
+- **Study Templates**: Predefined templates for common modalities (CT, MR, CR, US, DX, MG)
+- **PACS Integration**: C-ECHO and C-STORE operations for complete PACS communication
 - **Export Capabilities**: Export to PNG+text files or PDF with metadata
+- **Burnt-in Text**: DICOM metadata overlaid directly on generated images
 - **Comprehensive Logging**: CLI and file logging with detailed operation tracking
 - **Configurable Generation**: Set parameters at patient, study, and series levels
 - **CLI Interface**: Complete command-line interface for all operations
 - **Study Management**: Create, view, manage, and export local DICOM studies
+- **Convenience Scripts**: Ready-to-use shell scripts for common operations
+- **Example Studies**: Pre-generated examples for testing and demonstration
 
 ## Installation
 
@@ -199,6 +202,96 @@ pytest --cov=src/dicom_maker
 pytest tests/test_dicom_generator.py
 ```
 
+## Examples
+
+### Quick Start Examples
+
+The `bin/` directory contains convenience scripts for common operations:
+
+```bash
+# Generate example studies
+./bin/generate-examples.sh
+
+# Create a chest X-ray study
+./bin/create-chest-xray.sh
+
+# Create a CT study with 2 series
+./bin/create-ct-study.sh
+
+# Send study to PACS
+./bin/send-to-pacs.sh <study-id> <host> <port> <aec> <aet>
+```
+
+### Example Studies
+
+The `examples/` directory contains pre-generated studies:
+
+- **Chest X-Ray**: `examples/chest-xray/` - Single series CR study
+- **CT Abdomen**: `examples/ct-abdomen/` - Multi-series CT study
+- **Ultrasound**: `examples/ultrasound/` - US study with multiple series
+- **Mammography**: `examples/mammography/` - MG study with high-resolution images
+
+Each example includes:
+- DICOM files in `dicom/` subdirectory
+- PNG exports in `png/` subdirectory
+- PDF report in the root directory
+- Study metadata in JSON format
+
+### Command Examples
+
+```bash
+# Create a study with custom parameters
+dicom-maker create \
+  --modality CT \
+  --series-count 2 \
+  --image-count 5 \
+  --patient-name "Doe^John" \
+  --accession-number "CT-2025-001" \
+  --study-description "CT Chest and Abdomen"
+
+# Export study to PNG files
+dicom-maker export \
+  --study-id "1.2.826.0.1.3680043.8.498.123456789" \
+  --format png \
+  --output-dir "exports/ct-study"
+
+# Export study to PDF
+dicom-maker export \
+  --study-id "1.2.826.0.1.3680043.8.498.123456789" \
+  --format pdf \
+  --output-file "ct-study-report.pdf"
+
+# Send study to PACS
+dicom-maker send \
+  --study-id "1.2.826.0.1.3680043.8.498.123456789" \
+  --host localhost \
+  --port 4242 \
+  --aec DICOM_MANAGER \
+  --aet PACS1
+
+# Verify PACS connection
+dicom-maker verify \
+  --host localhost \
+  --port 4242 \
+  --aec DICOM_MANAGER \
+  --aet PACS1
+```
+
+### Study Templates
+
+Available templates for quick study generation:
+
+```bash
+# List all available templates
+dicom-maker list-templates
+
+# Create study using template
+dicom-maker create --template chest-xray --series-count 1 --image-count 2
+dicom-maker create --template ct-chest --series-count 2 --image-count 10
+dicom-maker create --template ultrasound-abdomen --series-count 1 --image-count 5
+dicom-maker create --template mammography --series-count 1 --image-count 4
+```
+
 ## Contributing
 
 1. Fork the repository
@@ -224,7 +317,11 @@ pytest tests/test_dicom_generator.py
 - [ ] Implement C-FIND support for PACS querying
 - [x] Add comprehensive logging system (CLI + file)
 - [x] Create study templates for common modalities
-- [ ] Add export functionality (PNG+text, PDF)
+- [x] Add export functionality (PNG+text, PDF)
+- [x] Add burnt-in text with DICOM metadata
+- [x] Fix PACS client UID handling and DX modality support
+- [x] Create convenience shell scripts
+- [x] Generate example studies and documentation
 
 ### Medium Priority
 - [x] Implement DICOM field validation and error handling

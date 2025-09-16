@@ -1,0 +1,16 @@
+DICOM Image Metadata
+====================
+
+Instance Number: 2
+SOP Instance UID: 1.2.826.0.1.3680043.8.498.42732024003584300147539304354399664799
+Modality: CR
+Rows: 512
+Columns: 512
+Bits Allocated: 16
+Bits Stored: 16
+Photometric Interpretation: MONOCHROME2
+Patient Name: Example^Chest^Patient
+Patient ID: bae1e4d2
+Study Date: 20250916
+Study Time: 100406
+Accession Number: CHEST-2025-001
