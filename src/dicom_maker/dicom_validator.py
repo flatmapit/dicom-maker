@@ -1,5 +1,8 @@
 """
 DICOM Field Validator and Generator
+
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
 """
 
 import uuid

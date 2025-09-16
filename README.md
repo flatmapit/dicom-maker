@@ -2,6 +2,8 @@
 
 A native Python CLI application for creating synthetic DICOM data and sending it to PACS systems.
 
+Copyright (c) 2025 flatmapit.com - Licensed under the MIT License
+
 ## Overview
 
 DICOM Maker is a command-line tool designed to generate synthetic DICOM studies, series, and images locally, then send them to specified PACS systems using DICOM C-STORE operations. The application provides a native Python implementation without external dependencies, offering full control over DICOM data generation and transmission.

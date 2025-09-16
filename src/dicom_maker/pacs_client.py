@@ -1,5 +1,8 @@
 """
 PACS Client - Handles DICOM network communication
+
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
 """
 
 import logging

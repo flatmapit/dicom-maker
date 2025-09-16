@@ -1,5 +1,8 @@
 """
 Study Manager - Manages local DICOM studies
+
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
 """
 
 import os

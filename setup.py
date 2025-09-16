@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Setup script for DICOM Maker
+
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
 """
 
 from setuptools import setup, find_packages
@@ -19,12 +22,13 @@ def read_requirements():
 setup(
     name="dicom-maker",
     version="0.1.0",
-    author="Christopher Gentle",
+    author="flatmapit.com",
     author_email="",
     description="A native Python CLI application for creating synthetic DICOM data and sending it to PACS systems",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/christophergentle/dicom-maker",
+    url="https://github.com/flatmapit/dicom-maker",
+    license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[

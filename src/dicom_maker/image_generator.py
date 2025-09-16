@@ -1,5 +1,8 @@
 """
 Realistic DICOM Image Generator
+
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
 """
 
 import numpy as np

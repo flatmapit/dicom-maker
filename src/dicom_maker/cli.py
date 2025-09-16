@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Command Line Interface for DICOM Maker
+
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
 """
 
 import click

@@ -1,6 +1,9 @@
 """
 DICOM Maker - A native Python CLI application for creating synthetic DICOM data.
 
+Copyright (c) 2025 flatmapit.com
+Licensed under the MIT License
+
 This package provides tools for:
 - Generating synthetic DICOM studies, series, and images
 - Sending DICOM data to PACS systems via C-STORE
@@ -9,7 +12,7 @@ This package provides tools for:
 """
 
 __version__ = "0.1.0"
-__author__ = "Christopher Gentle"
+__author__ = "flatmapit.com"
 __email__ = ""
 
 # Import main components for easy access
