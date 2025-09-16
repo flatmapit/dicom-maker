@@ -383,6 +383,7 @@ class DICOMImageGenerator:
             # Extract metadata
             patient_name = str(metadata.get('PatientName', 'Unknown'))
             patient_id = str(metadata.get('PatientID', 'Unknown'))
+            patient_dob = str(metadata.get('PatientBirthDate', 'Unknown'))
             study_uid = str(metadata.get('StudyInstanceUID', 'Unknown'))
             series_uid = str(metadata.get('SeriesInstanceUID', 'Unknown'))
             modality_text = str(metadata.get('Modality', modality))
@@ -395,10 +396,17 @@ class DICOMImageGenerator:
             else:
                 formatted_date = study_date
             
+            # Format DOB if it's in YYYYMMDD format
+            if len(patient_dob) == 8 and patient_dob.isdigit():
+                formatted_dob = f"{patient_dob[:4]}-{patient_dob[4:6]}-{patient_dob[6:8]}"
+            else:
+                formatted_dob = patient_dob
+            
             # Prepare text lines
             text_lines = [
                 f"Patient: {patient_name}",
                 f"ID: {patient_id}",
+                f"DOB: {formatted_dob}",
                 f"Study: {study_uid[:20]}...",
                 f"Series: {series_uid[:20]}...",
                 f"Modality: {modality_text}",

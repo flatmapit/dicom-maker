@@ -257,6 +257,7 @@ class ExportManager:
                 f.write(f"Photometric Interpretation: {image_ds.get('PhotometricInterpretation', 'N/A')}\n")
                 f.write(f"Patient Name: {image_ds.get('PatientName', 'N/A')}\n")
                 f.write(f"Patient ID: {image_ds.get('PatientID', 'N/A')}\n")
+                f.write(f"Patient DOB: {image_ds.get('PatientBirthDate', 'N/A')}\n")
                 f.write(f"Study Date: {image_ds.get('StudyDate', 'N/A')}\n")
                 f.write(f"Study Time: {image_ds.get('StudyTime', 'N/A')}\n")
                 f.write(f"Accession Number: {image_ds.get('AccessionNumber', 'N/A')}\n")

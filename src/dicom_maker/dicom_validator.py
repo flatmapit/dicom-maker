@@ -22,6 +22,7 @@ class DICOMFieldValidator:
         "patient": {
             "0010,0010": "PatientName",
             "0010,0020": "PatientID",
+            "0010,0030": "PatientBirthDate",
         },
         "study": {
             "0020,000D": "StudyInstanceUID",
@@ -187,7 +188,7 @@ class DICOMFieldValidator:
         elif tag == "0010,0020":  # PatientID
             return user_fields.get("patient_id", str(uuid.uuid4())[:8])
         elif tag == "0010,0030":  # PatientBirthDate
-            return user_fields.get("patient_birth_date", "19900101")
+            return user_fields.get("patient_birth_date", self._generate_random_dob())
         elif tag == "0010,0040":  # PatientSex
             return user_fields.get("patient_sex", "O")
         elif tag == "0020,000D":  # StudyInstanceUID
@@ -245,6 +246,29 @@ class DICOMFieldValidator:
         date_prefix = datetime.now().strftime("%Y%m%d")
         sequence = str(uuid.uuid4().int % 10000).zfill(4)
         return f"{date_prefix}-{sequence}"
+    
+    def _generate_random_dob(self) -> str:
+        """Generate a random patient date of birth."""
+        import random
+        from datetime import datetime, timedelta
+        
+        # Generate random age between 18 and 80 years
+        current_date = datetime.now()
+        min_age = 18
+        max_age = 80
+        
+        # Calculate date range
+        max_birth_date = current_date - timedelta(days=min_age * 365)
+        min_birth_date = current_date - timedelta(days=max_age * 365)
+        
+        # Generate random date within range
+        time_between = max_birth_date - min_birth_date
+        days_between = time_between.days
+        random_days = random.randint(0, days_between)
+        
+        random_birth_date = min_birth_date + timedelta(days=random_days)
+        
+        return random_birth_date.strftime("%Y%m%d")
     
     def get_generated_fields(self) -> Dict[str, Any]:
         """Get list of fields that were automatically generated."""

@@ -1,0 +1,17 @@
+DICOM Image Metadata
+====================
+
+Instance Number: 1
+SOP Instance UID: 1.2.826.0.1.3680043.8.498.10834416273276414578498401401273261828
+Modality: CT
+Rows: 512
+Columns: 512
+Bits Allocated: 16
+Bits Stored: 16
+Photometric Interpretation: MONOCHROME2
+Patient Name: FINAL^DOB^TEST
+Patient ID: 8f955d58
+Patient DOB: 20070309
+Study Date: 20250916
+Study Time: 184913
+Accession Number: FINAL-DOB-001
